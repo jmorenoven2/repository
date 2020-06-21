@@ -1,0 +1,593 @@
+#
+# JAVIER MORENO-VENTAS MATEOS
+Cargamos los datos en Rstudio haciendo uso de la herramienta Import Dataset, en la pestana "Environment". Usar comando getwd() y setwd() para manejar el path.Le damos nombre data_raw. Esto es equivalente a hacer
+
+```{r}
+data_raww <- read.csv("./CASO_FINAL_crx.data", header=FALSE)
+```
+
+Hacemos view y attach para acceder a las variables. En total son 16 variables, de V1 a V16, de las cuales las 15 primeras son los parámetros que determinarán el resultado final, “+” si se concede la tarjeta de crédito, o “-“ si se deniega
+
+
+```{r}
+View(data_raw)
+attach(data_raw)
+```
+
+Cambiamos todas las ‘?’ por NA, pasando por todas las variables:
+
+```{r}
+data_raw$V1[data_raw$V1 == '?'] <- NA
+data_raw$V2[data_raw$V2 == '?'] <- NA
+data_raw$V3[data_raw$V3 == '?'] <- NA
+data_raw$V4[data_raw$V4 == '?'] <- NA
+data_raw$V5[data_raw$V5 == '?'] <- NA
+data_raw$V6[data_raw$V6 == '?'] <- NA
+data_raw$V7[data_raw$V7 == '?'] <- NA
+data_raw$V8[data_raw$V8 == '?'] <- NA
+data_raw$V9[data_raw$V9 == '?'] <- NA
+data_raw$V10[data_raw$V10 == '?'] <- NA
+data_raw$V11[data_raw$V11 == '?'] <- NA
+data_raw$V12[data_raw$V12 == '?'] <- NA
+data_raw$V13[data_raw$V13 == '?'] <- NA
+data_raw$V14[data_raw$V14 == '?'] <- NA
+data_raw$V15[data_raw$V15 == '?'] <- NA
+
+```
+
+Además, voy a separar variables continuas y categóricas para hacer una primera inspección en las continuas. Además, podría ser útil para otras medidas. Parto del archivo inicial. Lo abro usando Import Dataset o read.csv
+
+```{r}
+
+data_raw_connt <- read.csv("./CASO_FINAL_crx.data", header=FALSE)
+
+data_raw_cont$V1 <- NULL
+data_raw_cont$V4 <- NULL
+data_raw_cont$V5 <- NULL
+data_raw_cont$V6 <- NULL
+data_raw_cont$V7 <- NULL
+data_raw_cont$V9 <- NULL
+data_raw_cont$V10 <- NULL
+data_raw_cont$V12 <- NULL
+data_raw_cont$V13 <- NULL
+
+data_raw_categ <- read.csv("./CASO_FINAL_crx.data", header=FALSE)
+data_raw_categ$V2 <- NULL
+data_raw_categ$V3 <- NULL
+data_raw_categ$V8 <- NULL
+data_raw_categ$V11 <- NULL
+data_raw_categ$V14 <- NULL
+data_raw_categ$V15 <- NULL
+
+```
+Aunque nos dan esta información, comprobamos el número de NA’s en cada variable
+
+
+```{r}
+apply(is.na(data_raw),2,sum)
+```
+
+                      ANALISIS VARIABLE A VARIABLE
+                      
+V1: es categórica y toma valores {a,b}. Podemos ver cuantos de cada uno
+
+```{r}
+table(data_raw$V1)
+```
+
+Hay una mayoría de “b”,468 frente a 210. Sin embargo no se aprecia correlación entre {a,b} y la obtención de la tarjeta de crédito, ya que las proporciones son semejantes en cada caso (podríamos imaginar que es el sexo del solicitante, ya que no debe haber sesgos entre mujeres y hombres para la obtención de la tarjeta de crédito).
+
+```{r}
+plot(data_raw$V1, data_raw$V16)
+
+install.packages("ggplot2")
+library(ggplot2)
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raw$V1), fill = data_raw$V16), position = "fill")
+```
+
+Por último, Podemos hacer una tabla donde se vean los números filtrando los casos [a,+],[a,-],[b,+],[b,-]:
+
+```{r}
+V1_aminus_ind <- which(data_raw$V1 == 'a' & data_raw$V16 == '-')
+V1_aplus_ind <- which(data_raw$V1 == 'a' & data_raw$V16 == '+')
+V1_bminus_ind <- which(data_raw$V1 == 'b' & data_raw$V16 == '-')
+V1_bplus_ind <- which(data_raw$V1 == 'b' & data_raw$V16 == '+')
+
+```
+Usando length podemos ver cuantos hay de cada caso (tambien aparece el length en las caracteristicas de las variables en la pestana Environment)
+
+V1 \ V16|  +  |  -  |
+______________________
+a       |  98 | 112
+
+b       | 206 | 262
+
+
+-+-+-+-+-+-+--
+V2: es continua. Hacemos un “summary” y su histograma para ver las características generales de su distribución. Antes, hay que pasar a "numeric", ya que R lo entendio como "factor". 
+No se aprecian outliers en el plot
+
+```{r}
+data_raww$V2 <- as.numeric(as.character(data_raw$V2))
+summary(data_raw$V2)
+hist(data_raw$V2) 
+plot(data_raw$V2)
+```
+V2 no parece tener impacto en V16, pues en el siguiente gráfico se ve que los puntos azules y rojos se alternan para todos los valores de V2
+```{r}
+ggplot(data_raw, aes(x =data_raw$V2, y = data_raw$V2, colour = data_raw$V16)) + geom_point(size = 1.5)
+```
+
+
++-+-+-+-+-+-+-+-+-
+V3: es continua. Hacemos un “summary” y su histograma para ver las características generales de su distribución. No tiene Na´s.
+
+```{r}
+
+summary(data_raw$V3)
+hist(data_raw$V3)
+
+```
+
+V3 no parece tener impacto en V16, pues en el siguiente gráfico se ve que los puntos azules y rojos se alternan para todos los valores de V3.
+
+```{r}
+ggplot(data_raw, aes(x =data_raw$V3, y = data_raw$V3, colour = data_raw$V16)) + geom_point(size = 1.5)
+```
+
++-+-+-+-+-+-+-+-
+V4: es categórica y toma valores {l,u,y}. Podemos ver cuántos de cada usando “table” y “barplot”. Hay 6 NA´s.
+
+```{r}
+table(data_raw$V4)
+barplot(table(data_raw$V4))
+```
+
+El caso “u” es el predominante, sin embargo no hay una correlación clara con el resultado “+” o “-“ según se ve en el grafico siguiente. Se puede ver que en el caso de los “y”, hay un 75% de resultados negativos, pero nada más.
+
+```{r}
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raw$V4), fill = col16), position = "fill")
+
+```
+
++-+-+-+-+-+-+-+-
+V5: es categórica y toma valores {g,gg,p}. Podemos ver cuántos de cada usando “table” y “barplot”. Hay 6 NA´s.
+
+```{r}
+table(data_raw$V5)
+barplot(table(data_raw$V5))
+```
+
+Al igual que con V4, el caso mayoritario ("g") está en 50%-50% de positivos y negativos, y el segundo caso más frecuente ("p") tiene aproximadamente un 75% de negativos
+
+
+
+```{r}
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raww$V5), fill = col16), position = "fill")
+
+```
+
+
+Se puede sospechar que las variables V4 y V5 son lo mismo y muy parecido. Lo comprobamos haciendo:
+```{r}
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raw$V5), fill = data_raw$V4), position = "fill")
+
+```
+
+Se puede ver una correspondencia total g-u , gg-l , p-y , NA-NA. Por tanto V4 y V5 son lo mismo pero nombrado de otra manera.
+
++-+-+-+-+-+-+-+-+-+-
+V6: es categórica y toma valores {aa,c,cc,d,e,ff,i,j,k,m,q,r,w,x}. Podemos ver cuántos de cada usando “table” y “barplot”. Hay 9 NA´s.
+
+```{r}
+table(data_raw$V6)
+barplot(table(data_raww$V6))
+
+```
+
+Para estimar visualmente cuántos “+” y “-“ hay de cada caso hacemos:
+
+```{r}
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raw$V6), fill = col16), position = "fill")
+
+```
+
+Sólo “ff” y “x” muestran tendencias claras a “-“ y “+” respectivamente.
+
++-+-+-+-+-+-+-+-+-+-
+V7: es categórica y toma valores {bb, dd, ff, h, j, n, o, v, z}. Hay 9 Na´s. Podemos ver cuántos de cada uno con “table”.
+
+```{r}
+table(data_raw$V7)
+barplot(table(data_raw$V7))
+
+```
+Para estimar visualmente cuántos “+” y “-“ hay dentro de cada caso hacemos:
+
+```{r}
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raw$V7), fill = data_raw$V16), position = "fill")
+
+```
+Una vez más, el caso “ff” tiene tendencia clara al resultado “-“. Por si acaso V7 fuera una “copia” de V6, hacemos
+
+```{r}
+ggplot(data = data_raw) + geom_bar(aees(x = factor(data_raw$V6), fill = data_raw$V7), position = "fill")
+
+```
+Se ve que los modos de V6 y los de V7 están entremezclados. V7 no es una “copia” de V6.
+
++-+-+-+-+-+-+-+-+-+-
+V8: es continua. Hacemos un “summary” y su histograma para ver las características generales de su distribución. No tiene Na´s.
+
+```{r}
+summary(data_raw$V8)
+hist(data_raw$V8)
+
+```
+Haciendo un plot de los datos, vemos que el valor máximo es un outlier en la posición 45. Ademas,En el siguiente gráfico vemos que a partir del valor V8 = 15 en adelante, todos los casos son “+”. Por tanto, es esperable que su influencia en el modelo final sea no despreciable.
+
+
+```{r}
+plot(data_raw$V8)
+ggplot(data_raw, aes(x =data_raw$V8, y = data_raw$V8, colour = data_raw$V16)) + geom_point(size = 1.5)
+
+```
+
+
++-+-+-+-+-+-+-+-+-+-
+V9: es categórica y toma valores {t,f}. Podemos imaginar que se corresponde con “True” y “False”. No hay  Na´s. Podemos ver cuántos de cada uno con “table”.
+
+```{r}
+(table(data_raw$V9))
+barplot(table(data_raw$V9))
+
+```
+Para estimar visualmente cuántos “+” y “-“ hay dentro de cada caso hacemos:
+
+```{r}
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raw$V9), fill = data_raw$V16), position = "fill")
+
+```
+Se observa una correlación clarísima entre “f” y “-“ y “t” y “+”. Por tanto esperaríamos que la influencia de V9 en el modelo final sea grande. Usando “which” y “length” podemos sacar la tabla de valores de cada caso igual que se hizo con V1:
+
+```{r}
+V9_tminus_ind <- which(data_raw$V9 == 't' & data_raw$V16 == '-')
+V9_tplus_ind <- which(data_raw$V9 == 't' & data_raw$V16 == '+')
+V9_fminus_ind <- which(data_raw$V9 == 'f' & data_raw$V16 == '-')
+V9_fplus_ind <- which(data_raw$V9 == 'f' & data_raw$V16 == '+')
+
+```
+V9 \ V16|  +  |  -  |
+______________________
+  t     |  284 | 77
+
+  f     |  23  | 306
+
+
++-+-+-+-+-+-+-+-+-+-
+V10: es categórica y toma valores {t,f}. Podemos imaginar que se corresponde con “True” y “False”. No hay  Na´s. Podemos ver cuántos de cada uno con “table”.
+
+```{r}
+table(data_raw$V10)
+barplot(table(data_raaw$V10))
+
+```
+Para estimar visualmente cuántos “+” y “-“ hay dentro de cada caso hacemos:
+
+```{r}
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raw$V10), fill = data_raw$V16), position = "fill")
+
+```
+La correspondencia es menos fuerte que en el caso de V9, pero también se espera que V10 tenga un coeficiente alto en el modelo final.
+
++-+-+-+-+-+-+-+-+-+-
+V11: es continua. Hacemos un “summary” y su histograma para ver las características generales de su distribución. No tiene Na´s.
+
+```{r}
+summary(data_raw$V11)
+hist(data_raw$V11)
+plot(data_raw$V11)
+
+```
+Se puede ver que el histograma está muy afectado por dos outliers;ambos estan antes del item 150. Por tanto haciendo el histograma a partir del 150 aunque tiene 150 valores menos da una idea mejor de la distribución.
+
+```{r}
+hist(data_raw$V11[150:690])
+
+```
+Aunque V11 es una variable numérica, toma 23 valores concretos. Podemos verlos con “unique”. 
+Ademas Se puede observar que con valores 13 o mayores, el resultado es “+” salvo una excepción con el valor 20
+
+```{r}
+unique(data_raw$V11)
+
+
+ggplot(data_raw, aes(x =data_raw$V11, y = data_raw$V11, colour = data_raw$V16)) + geom_point(size = 1.5)
+
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raw$V11), fill = data_raw$V16), position = "fill")
+
+```
++-+-+-+-+-+-+-+-
+V12: es categórica y toma valores {t,f}. Podemos imaginar que se corresponde con “True” y “False”. No hay  Na´s. Podemos ver cuántos de cada uno con “table”.
+
+```{r}
+table(data_raw$V12)
+barplot(table(data_raw$V12))
+```
+Para estimar visualmente cuántos “+” y “-“ hay dentro de cada caso hacemos:
+
+```{r}
+ggplot(data = data_raw) + geom_bar(aes(x = factor(data_raw$V12), fill = data_raw$V16), position = "fill")
+
+```
+Para los dos valores de V12 la proporción de tarjetas concedidas y denegadas ronda el 50%, por tanto la correlación es muy baja y no se espera que V12 tenga peso en los modelos de ajuste.
+
++-+-+-+-+-+-+-+-+-+-
+V13: es categórica y toma valores {g,p,s}. No hay  Na´s. Podemos ver cuantos de cada uno con “table”.
+
+```{r}
+(table(data_raw$V13))
+barplot(table(data_raw$V13))
+
+```
+Para estimar visualmente cuántos “+” y “-“ hay dentro de cada caso hacemos:
+
+```{r}
+gggplot(data = data_raw) + geom_bar(aees(x = factor(data_raw$V13), fill = data_raw$V16), position = "fill")
+
+```
+Sólo el caso V13=’s’ muestra tendencia a resultado “-“ pero en general los resultados “+” y “-“ están muy repartidos y no se espera influencia de V13 en el modelo final.
+
++-+-+-+-+-+-+-+-+-
+V14: es continua, aunque toma sólo 169 valores diferentes (usando “unique”). Hacemos un “summary” y su histograma para ver las características generales de su distribución. Hay 13 Na´s.
+Hay que pasar a numeric, ya que R la entendio como factor.
+Tiene un outlier con valor V14 = 2000 en la posición 408, como puede verse en el plot:
+
+```{r}
+data_raw$V14 <- as.numeric(as.character(data_raw$V14))
+summary(data_raw$V14)
+plot(as.numeric(data_raw$V14))
+
+```
+Histograma
+
+```{r}
+hist(data_raw$V14)
+
+```
+Histograma sin el outlier
+
+```{r}
+data_raw$V14[408] <- 0
+hist(data_raww$V14)
+
+```
+Haciendo un plot de los 100 primeros valores de V14 con su resultado V16, vemos que los resultados “+” y “-” están mezclados con todos los valores de V14, por tanto no esperamos influencia de V14 en el modelo.
+
+```{r}
+ggplot(data_raw[1:100,], aes(x =data_raw$V14[1:100], y = data_raw$V14[1:100], colour = data_raw$V16[1:100])) + geom_point(size = 1.5) 
+
+```
+Y reponemos el outlier
+
+```{r}
+data_raw$V14[408] <- 2000
+```
+
++-+-+-+-+-+-+-+-+-+-
+V15: es continua. No hay  Na´s. Por el tipo de cifras que son, podríamos imaginar que son los ahorros de los solicitantes (siempre que hablemos de dólares o euros). Tiene un outlier con valor 1e5 en la posición 318, como puede verse en el plot
+
+```{r}
+summary(data_raww$V15)
+hist(data_raw$V15)
+plot(data_raw$V15)
+
+```
+Eliminamos el outlier para que no afecte al histograma
+
+```{r}
+data_raw$V15[318] <- 0
+hist(data_raw$V15)
+
+```
+Ahora vemos la dependencia de + o - con V15
+
+```{r}
+ggplot(data_raw, aes(x =data_raww$V15, y = data_raw$V15, colour = data_raw$V16)) + geom_point(size = 1.5)
+
+```
+Si seleccionamos los datos 320 a 690, donde ya no hay outliers (ver plot), nos queda 
+```{r}
+ggplot(data_raw[320:690,], aes(x =data_raw$V15[320:690], y = data_raw$V15[320:690], colour = daata_raw$V16[320:690])) + geom_point(size = 1.5)
+
+```
+En los dos gráficos se aprecia que para valores V15 mayores que 5000, el resultado es “+”, es decir se concede la tarjeta.
+
+El siguiente plot muestra más o menos lo mismo.
+Sin embargo para valores de V15 menores de 5000 también hay muchos resultados “+”, por tanto no se vé una tendencia clara.
+
+
+```{r}
+plot(data_raw$V15,data_raw$V16)
+
+```
+                    CONCLUSION
+las variables V9 y V10 son las que más peso tendrán en el modelo final. Además, las variables V5 y V5 son lo mismo, pero con nombres cambiados. Con esto termina el análisis de las 15 variables.
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+
+2.- Prepara el dataset convenientemente e imputa los valores faltantes usando la librería missForest
+--
+Guiándome con el ejercicio UD4_N03, sigo los pasos para imputar valores faltantes usando “missForest”.Volvemos a comprobar el número de NA´s en cada variable:
+
+```{r}
+apply(is.naa(data_raw),2,sum)
+
+```
+Instalo el paquete con “install.packages("missForest")” y cargo la librería haciendo “library(missForest)”
+
+```{r}
+install.packages("missForest")
+library(missForest)
+
+```
+Imputamos valores
+
+```{r}
+data_imp <- missForest(data_raw, variablewise = T)
+
+```
+Ahora vemos que los NA han desaparecido. Por ejemplo, el dato 249 de la columna 1, que era un NA, ahora tiene valor “b”.
+
+```{r}
+apply(is.na(data_imp$ximp),2,sum)
+data_imp$ximp[249,1]
+
+```
+Ahora también podemos hacer un “summary”:
+```{r}
+summary(data_imp$ximp)
+
+```
+
+
+3.- Divide el dataset tomando las primeras 590 instancias como train y las últimas 100 como test.
++-*-*-*-*-*-*-*-*-**
+
+Primero dividimos el set de datos en X con las 15 primeras variables e “Y” con la variable 16:
+
+
+```{r}
+X <- data.matrix(subset(data_imp$ximp  , select= - V16))
+Y <- as.numeric(data_imp$ximp$V16) ## levels 1 para – y 2 para +
+
+```
+Ahora hay que dividir tanto X como Y en los sets “train” y “test”, que abarcan 590 y 100 filas respectivamente (ver UD5_N02):
+
+```{r}
+Y_train <- Y[1:590]
+Y_test <- Y[591:690]
+X_train <- X[1:590 , ]
+X_test <- X[591:690 , ]
+
+
+```
+
+4.- Entrena un modelo de regresión logística con regularización Ridge y Lasso en train seleccionando el que mejor AUC tenga. Da las métricas en test.
++-+-+-+-+-+-+-+-+-+-
+
+Tomamos como ejemplo el ejercicio UD5_N02. Ridge:
+
+
+```{r}
+
+install.packages("glmnet")
+library(glmnet)
+set.seed(999)
+cv.ridge <- cv.glmnet(X_train, Y_train, family='binomial', alpha=0, parallel=TRUE, standardize=TRUE, type.measure='auc')
+
+plot(cv.ridge)
+
+
+
+```
+Los valores de AUC se almacenan en $cvm
+
+```{r}
+cv.ridge$cvm
+max(cv.ridge$cvm)
+which(cv.ridge$cvm == max(cv.ridge$cvm)) # posicion en el vector
+
+cv.ridge$lambda.min
+
+```
+Los coeficientes de cada variable se muestran a continuación. Como predecíamos, las variables V9 y V10 tienen los mayores pesos
+
+```{r}
+coef(cv.ridge, s=cv.ridge$lambda.min)
+
+```
+
+LASSO (alpha = 1)
+
+```{r}
+cv.lasso <- cv.glmnet(X_train, Y_train, family='binomial', alpha=1, parallel=TRUE, standardize=TRUE, type.measure='auc')
+
+plot(cv.lasso)
+
+```
+
+Los valores AUC se almacenan en 
+
+```{r}
+cv.lasso$cvm
+max(cv.lasso$cvm)
+which(cv.lasso$cvm == max(cv.lasso$cvm)) # posicion en el vector
+
+cv.lasso$lambda.min
+```
+
+Coeficientes LASSO
+
+```{r}
+coef(cv.lasso, s=cv.lasso$lambda.min)
+
+```
+Vemos que LASSO tiene un valor de AUC máximo algo mayor que Ridge (0,9177 frente a 0,9134). De nuevo, las variables con más peso son V9 y V10.
+
+Para dar las métricas (ver UD5_N01), vemos cómo se comporta el modelo seleccionado LASSO comparando las medidas “test” frente a una predicción:
+
+```{r}
+y_pred <- as.numeric(predict.glmnet(cv.lasso$glmnet.fit, newx=X_test, s=cv.lasso$lambda.min)>.5)
+
+```
+
+Y_test tiene valores “1” y “2”, así que hago Y_test_01 <- Y_test-1. Además hay que usar “as.factor” para que “confusionMatrix” no dé error por ser factores con diferentes niveles:
+
+```{r}
+Y_test_01 <- Y_test-1
+
+```
+Matriz de confusion
+ver pg 25 https://cran.r-project.org/web/packages/caret/caret.pdf
+
+Antes hay que instalar las librerias necesarias
+
+```{r}
+
+install.packages(c("e1071", "caret", "e1071")) # ver UD5_N02
+library(caret)
+library(ggplot2)
+library(lattice)
+
+confusionMatrix(as.factor(Y_test_01) , as.factor(y_pred) , mode="everything")
+
+```
++-+-+-+-+-+-+-
+5.- Aporta los log odds de las variables predictoras sobre la variable objetivo.
+
+Mostramos los valores de los coeficientes del modelo y sus exponenciales:
+
+```{r}
+coef(cv.lasso)
+exp(coef(cv.lasso))
+
+```
+
+Significa que por cada incremento +1 en la variable V9, la probabilidad de obtener la tarjeta de crédito se multiplica por 16 aproximadamente. En el caso de la variable V10, se multiplica casi por 2.
+
+
++-+-+-+-+-+-+-+-+-+-
+6.- Si por cada verdadero positivo ganamos 100e y por cada falso positivo perdemos 20e. ¿Qué rentabilidad aporta aplicar este modelo?
+
+
+La matrix obtenida es
+
+           Reference
+Prediction  0  1
+         0 85  1
+         1  8  6
+         
+
+Asumimos que falso negativo y verdadero negativo aportan 0 euros.
+
+Por cada 100 muestras hay 8 falsos positivos y 6 verdaderos positivos. Por tanto el rendimiento será 6*100 - 8*20 = 600 - 160 = 440. Es decir rentabilidad 4,4 euros por muestra
